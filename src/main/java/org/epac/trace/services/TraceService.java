@@ -1,8 +1,6 @@
 package org.epac.trace.services;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
 import org.epac.trace.dto.WorkSummary;
 import org.epac.trace.entity.Operation;
 import org.epac.trace.entity.Trace;
@@ -88,14 +86,13 @@ public class TraceService {
                     Duration duration = Duration.between(startOfDay, firstOperationTime);
                     workDuration = workDuration.plus(duration);
                 }
-            } else if (lastOperation ==Operation.PAUSE) {
+            } else if (lastOperation ==Operation.PAUSE && !traces.isEmpty()) {
                 // Si la dernière opération du jour précédent est de type PAUSE
                 // Calculer la durée de pause de minuit à la première opération du jour actuel
-                if (!traces.isEmpty()) {
                     LocalDateTime firstOperationTime = traces.get(0).getTimestamp();
                     Duration duration = Duration.between(startOfDay, firstOperationTime);
                     pauseDuration = pauseDuration.plus(duration);
-                }
+
             }
             lastTimestamp = traces.getFirst().getTimestamp();
         }
@@ -179,16 +176,16 @@ public class TraceService {
                         Duration duration = Duration.between(startOfDay, firstOperationTime);
                         workDuration = workDuration.plus(duration);
                     }
-                } else if (lastOperation == Operation.PAUSE) {
+                } else if (lastOperation == Operation.PAUSE && !machineTraces.isEmpty()) {
                     // Si la dernière opération du jour précédent est de type PAUSE
                     // Calculer la durée de pause de minuit à la première opération du jour actuel
-                    if (!machineTraces.isEmpty()) {
                         LocalDateTime firstOperationTime = machineTraces.get(0).getTimestamp();
                         Duration duration = Duration.between(startOfDay, firstOperationTime);
                         pauseDuration = pauseDuration.plus(duration);
-                    }
+
                 }
                 lastTimestamp = machineTraces.get(0).getTimestamp();
+
             }
 
             // Traiter les opérations du jour actuel
@@ -255,8 +252,6 @@ public class TraceService {
 
             for (Map.Entry<String, List<Trace>> machineEntry : tracesByMachine.entrySet()) {
                 String machineName = machineEntry.getKey();
-                List<Trace> machineTraces = machineEntry.getValue();
-
                 // Calculer le résumé de travail pour la machine
                 WorkSummary workSummary = calculateDailyWorkSummaryByMachine(employerName, date).get(machineName);
                 workSummaryByMachine.put(machineName, workSummary);
