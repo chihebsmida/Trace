@@ -2,6 +2,7 @@ package org.epac.trace.repository;
 
 import org.epac.trace.entity.Trace;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,4 +20,9 @@ public interface TraceRepository extends JpaRepository<Trace, LocalDateTime> {
     List<Trace> findByTimestampBetween(LocalDateTime localDateTime, LocalDateTime localDateTime1);
 
     Optional<Trace> findTopByMachineNameOrderByTimestampDesc(String machineName);
+
+    List<Trace> findAllByOrderByTimestamp();
+    List<Trace> findAllByEmployerNameOrderByTimestampDesc(String employerName);
+    @Query("SELECT DISTINCT t.employerName FROM Trace t")
+    List<String> findDistinctEmployerName();
 }

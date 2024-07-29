@@ -53,14 +53,14 @@ public class TraceService {
         traceRepository.save(trace);
         return calculateDailyWorkSummaryByMachine(trace.getEmployerName(), LocalDate.now());
     }
-
     public WorkSummary calculateDailyWorkSummary(String employerName, LocalDate date) {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
 
         // Récupérer les opérations du jour actuel
         List<Trace> traces = traceRepository.findByEmployerNameAndTimestampBetweenOrderByTimestampAsc(employerName, startOfDay, endOfDay);
-
+       if (traces.isEmpty())
+           return new WorkSummary(Duration.ZERO, Duration.ZERO, Duration.ofDays(1));
         // Récupérer la dernière opération du jour précédent
         LocalDateTime startOfPreviousDay = startOfDay.minusDays(1);
         LocalDateTime endOfPreviousDay = startOfDay.minusNanos(1);
@@ -86,15 +86,18 @@ public class TraceService {
                     Duration duration = Duration.between(startOfDay, firstOperationTime);
                     workDuration = workDuration.plus(duration);
                 }
-            } else if (lastOperation ==Operation.PAUSE && !traces.isEmpty()) {
+            } else if (lastOperation == Operation.PAUSE && !traces.isEmpty()) {
                 // Si la dernière opération du jour précédent est de type PAUSE
                 // Calculer la durée de pause de minuit à la première opération du jour actuel
-                    LocalDateTime firstOperationTime = traces.get(0).getTimestamp();
-                    Duration duration = Duration.between(startOfDay, firstOperationTime);
-                    pauseDuration = pauseDuration.plus(duration);
-
+                LocalDateTime firstOperationTime = traces.get(0).getTimestamp();
+                Duration duration = Duration.between(startOfDay, firstOperationTime);
+                pauseDuration = pauseDuration.plus(duration);
             }
-            lastTimestamp = traces.getFirst().getTimestamp();
+
+            // Vérifier si la liste traces n'est pas vide avant d'accéder à son premier élément
+            if (!traces.isEmpty()) {
+                lastTimestamp = traces.get(0).getTimestamp();
+            }
         }
 
         // Traiter les opérations du jour actuel
@@ -112,7 +115,8 @@ public class TraceService {
             lastTimestamp = trace.getTimestamp();
             lastOperation = trace.getOperation();
         }
-        //si la dernière opération est de type START
+
+        // Si la dernière opération est de type START
         if (lastOperation == Operation.START) {
             // Calculer la durée de travail de la dernière opération du jour actuel à la fin de la journée
             Duration duration = Duration.between(lastTimestamp, endOfDay);
@@ -138,7 +142,8 @@ public class TraceService {
 
         // Récupérer les opérations du jour actuel, triées par machine et par timestamp
         List<Trace> traces = traceRepository.findByEmployerNameAndTimestampBetweenOrderByMachineNameAscTimestampAsc(employerName, startOfDay, endOfDay);
-
+       if(traces.isEmpty())
+           return new HashMap<>();
         // Initialisation des maps pour garder les traces par machine
         Map<String, List<Trace>> tracesByMachine = new HashMap<>();
         for (Trace trace : traces) {
@@ -222,7 +227,6 @@ public class TraceService {
 
             workSummaryByMachine.put(machine, new WorkSummary(workDuration, pauseDuration, inactiveDuration));
         }
-
         return workSummaryByMachine;
     }
 
@@ -291,5 +295,81 @@ public class TraceService {
     }
 
 
+    public Map<LocalDate, WorkSummary> calculateWeeklyWorkSummaryByEmployee(String employerName) {
+        // Récupérer toutes les traces de la base de données
+        List<Trace> traces = traceRepository.findAllByEmployerNameOrderByTimestampDesc(employerName);
+
+            // Grouper les traces par semaine
+            Map<LocalDate, List<Trace>> tracesByWeek = traces.stream()
+                    .collect(Collectors.groupingBy(trace -> trace.getTimestamp().toLocalDate().with(java.time.DayOfWeek.MONDAY)));
+
+            Map<LocalDate, WorkSummary> weeklyWorkSummary = new HashMap<>();
+
+            for (Map.Entry<LocalDate, List<Trace>> weekEntry : tracesByWeek.entrySet())
+            {
+                LocalDate startOfWeek = weekEntry.getKey();
+                LocalDate endOfWeek = startOfWeek.plusDays(6);
+
+                calculerWorkSummarybyemployerAndIntervalDate(employerName, weeklyWorkSummary, startOfWeek, endOfWeek);
+            }
+
+            return weeklyWorkSummary;
+        }
+
+    public Map<LocalDate, WorkSummary> calculateMonthlyWorkSummaryByEmployee(String employerName) {
+        // Récupérer toutes les traces de la base de données
+        List<Trace> traces = traceRepository.findAllByEmployerNameOrderByTimestampDesc(employerName);
+
+        // Grouper les traces par mois
+        Map<LocalDate, List<Trace>> tracesByMonth = traces.stream()
+                .collect(Collectors.groupingBy(trace -> trace.getTimestamp().toLocalDate().withDayOfMonth(1)));
+
+        Map<LocalDate, WorkSummary> monthlyWorkSummary = new HashMap<>();
+
+        for (Map.Entry<LocalDate, List<Trace>> monthEntry : tracesByMonth.entrySet()) {
+            LocalDate startOfMonth = monthEntry.getKey();
+            LocalDate endOfMonth = startOfMonth.plusMonths(1).minusDays(1);
+
+            calculerWorkSummarybyemployerAndIntervalDate(employerName, monthlyWorkSummary, startOfMonth, endOfMonth);
+        }
+        return monthlyWorkSummary;
+    }
+// Méthode pour calculer le résumé du travail pour un employeur et un intervalle de dates donnés
+    private void calculerWorkSummarybyemployerAndIntervalDate(String employerName, Map<LocalDate, WorkSummary> monthlyWorkSummary, LocalDate startOfMonth, LocalDate endOfMonth) {
+        Duration totalWorkDuration = Duration.ZERO;
+        Duration totalPauseDuration = Duration.ZERO;
+        Duration totalInactiveDuration = Duration.ZERO;
+
+        for (LocalDate date = startOfMonth; !date.isAfter(endOfMonth); date = date.plusDays(1)) {
+            WorkSummary dailySummary = calculateDailyWorkSummary(employerName, date);
+            totalWorkDuration = totalWorkDuration.plus(dailySummary.workDuration());
+            totalPauseDuration = totalPauseDuration.plus(dailySummary.pauseDuration());
+            totalInactiveDuration = totalInactiveDuration.plus(dailySummary.inactiveDuration());
+        }
+
+        monthlyWorkSummary.put(startOfMonth, new WorkSummary(totalWorkDuration, totalPauseDuration, totalInactiveDuration));
+    }
+
+    public Map<String, Map<LocalDate, WorkSummary>> calculateWeeklyWorkSummaryForAllEmployees() {
+        // Récupérer toutes les traces de la base de données
+        List<String> employerName = traceRepository.findDistinctEmployerName();
+        Map<String, Map<LocalDate, WorkSummary>> weeklyWorkSummaryByEmployee = new HashMap<>();
+        for (String employer : employerName) {
+            Map<LocalDate, WorkSummary> weeklyWorkSummary = calculateWeeklyWorkSummaryByEmployee(employer);
+            weeklyWorkSummaryByEmployee.put(employer, weeklyWorkSummary);
+        }
+        return weeklyWorkSummaryByEmployee;
+    }
+
+    public Map<String, Map<LocalDate, WorkSummary>> calculateMonthlyWorkSummaryForAllEmployees() {
+        // Récupérer toutes les employer name de la base de données
+        List<String> employerName = traceRepository.findDistinctEmployerName();
+        Map<String, Map<LocalDate, WorkSummary>> monthlyWorkSummaryByEmployee = new HashMap<>();
+        for (String employer : employerName) {
+            Map<LocalDate, WorkSummary> monthlyWorkSummary = calculateMonthlyWorkSummaryByEmployee(employer);
+            monthlyWorkSummaryByEmployee.put(employer, monthlyWorkSummary);
+        }
+        return monthlyWorkSummaryByEmployee;
+    }
 
 }

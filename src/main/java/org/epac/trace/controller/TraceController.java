@@ -21,7 +21,8 @@ public class TraceController {
 
 
     @PostMapping("/add")
-    @Operation(summary = "Add a new trace")
+    @Operation(summary = "Add a new trace", description = "Add a new trace to the database no need to provide timestamp it will be generated automatically")
+    @ApiResponse(responseCode = "200", description = "Trace added successfully")
     public ResponseEntity<?> addTrace(
             @Parameter(description = "Trace object to be stored in database", required = true) @RequestBody Trace trace) {
         try {
@@ -67,5 +68,33 @@ public class TraceController {
 
         return traceService.getWorkSummaryByMachineAndEmployee(date);
     }
+    @GetMapping("/weekly-work-summary")
+    @Operation(summary = "Obtenir le résumé du travail hebdomadaire pour tous les employés par semaine",
+            description = "Retourne une map des résumés de travail de chaque employé, groupés par semaine.")
+    Map<String, Map<LocalDate, WorkSummary>> calculateWeeklyWorkSummaryForAllEmployees() {
+        return traceService.calculateWeeklyWorkSummaryForAllEmployees();
+    }
+    @GetMapping("/weekly-work-summary-by-employer")
+    @Operation(summary = "Obtenir le résumé du travail hebdomadaire pour par semaine pour un employé",
+            description = "Retourne une map des résumés de travail de chaque employé, groupés par semaine.")
+    Map<LocalDate, WorkSummary> calculateWeeklyWorkSummaryForAllEmployees(
+            @Parameter(description = "nom d'employer", required = true)
+            @RequestParam String employerName) {
+        return traceService.calculateWeeklyWorkSummaryByEmployee(employerName);
+    }
+    @GetMapping("/monthly-work-summary")
+    @Operation(summary = "Obtenir le résumé du travail mensuel pour tous les employés par mois",
+            description = "Retourne une map des résumés de travail de chaque employé, groupés par mois.")
+    Map<String, Map<LocalDate, WorkSummary>> calculateMonthlyWorkSummaryForAllEmployees() {
+        return traceService.calculateMonthlyWorkSummaryForAllEmployees();
+    }
 
+    @GetMapping("/monthly-work-summary-by-employer")
+    @Operation(summary = "Obtenir le résumé du travail mensuel pour tous les employés par mois",
+            description = "Retourne une map des résumés de travail de chaque employé, groupés par mois.")
+    Map<LocalDate, WorkSummary> calculateMonthlyWorkSummaryByEmployee(
+            @Parameter(description = "nom d'employer", required = true)
+            @RequestParam String employerName) {
+        return traceService.calculateMonthlyWorkSummaryByEmployee(employerName);
+    }
 }
