@@ -83,6 +83,12 @@ public class TraceController {
             @RequestParam String employerName) {
         return traceService.calculateWeeklyWorkSummaryByEmployee(employerName);
     }
+    @GetMapping("/daily-work-summary")
+    @Operation(summary = "Obtenir le résumé du travail journalier pour tous les employés",
+            description = "Retourne une map des résumés de travail de chaque employé, groupés par jour.")
+    Map<String, Map<LocalDate, WorkSummary>> calculateDailyWorkSummaryForAllEmployees() {
+        return traceService.calculateDailyWorkSummaryForAllEmployees();
+    }
     @GetMapping("/monthly-work-summary")
     @Operation(summary = "Obtenir le résumé du travail mensuel pour tous les employés",
             description = "Retourne une map des résumés de travail de chaque employé, groupés par mois.")
