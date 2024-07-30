@@ -16,6 +16,7 @@ import java.util.Map;
 
 @RestController
 @AllArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200")
 public class TraceController {
     private final TraceService traceService;
 
@@ -33,7 +34,7 @@ public class TraceController {
         }
     }
     @GetMapping("/work-summary/{employerName}")
-    @Operation(summary = "Obtenir le résumé de travail pour un employeur et une date donnés")
+    @Operation(summary = "Obtenir le résumé de travail pour un employeur pour une date donnés")
     public WorkSummary getWorkSummary(
             @Parameter(description = "Nom de l'employeur", required = true) @PathVariable String employerName,
             @Parameter(description = "Date pour laquelle le résumé est requis format date yyyy-MM-DD", required = true)
@@ -75,7 +76,7 @@ public class TraceController {
         return traceService.calculateWeeklyWorkSummaryForAllEmployees();
     }
     @GetMapping("/weekly-work-summary-by-employer")
-    @Operation(summary = "Obtenir le résumé du travail hebdomadaire pour par semaine pour un employé",
+    @Operation(summary = "Obtenir le résumé du travail hebdomadaire par semaine pour un employé",
             description = "Retourne une map des résumés de travail de chaque employé, groupés par semaine.")
     Map<LocalDate, WorkSummary> calculateWeeklyWorkSummaryForAllEmployees(
             @Parameter(description = "nom d'employer", required = true)
@@ -83,14 +84,14 @@ public class TraceController {
         return traceService.calculateWeeklyWorkSummaryByEmployee(employerName);
     }
     @GetMapping("/monthly-work-summary")
-    @Operation(summary = "Obtenir le résumé du travail mensuel pour tous les employés par mois",
+    @Operation(summary = "Obtenir le résumé du travail mensuel pour tous les employés",
             description = "Retourne une map des résumés de travail de chaque employé, groupés par mois.")
     Map<String, Map<LocalDate, WorkSummary>> calculateMonthlyWorkSummaryForAllEmployees() {
         return traceService.calculateMonthlyWorkSummaryForAllEmployees();
     }
 
     @GetMapping("/monthly-work-summary-by-employer")
-    @Operation(summary = "Obtenir le résumé du travail mensuel pour tous les employés par mois",
+    @Operation(summary = "Obtenir le résumé du travail mensuel  pour un employé",
             description = "Retourne une map des résumés de travail de chaque employé, groupés par mois.")
     Map<LocalDate, WorkSummary> calculateMonthlyWorkSummaryByEmployee(
             @Parameter(description = "nom d'employer", required = true)

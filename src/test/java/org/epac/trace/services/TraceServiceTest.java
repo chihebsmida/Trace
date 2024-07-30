@@ -78,7 +78,6 @@ class TraceServiceTest {
     }
 
 
-
     // Helper method pour  comparaison Duration values
     private void assertDurationEquals(Duration expected, Duration actual) {
         long expectedSeconds = expected.getSeconds();

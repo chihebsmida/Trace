@@ -299,22 +299,23 @@ public class TraceService {
         // Récupérer toutes les traces de la base de données
         List<Trace> traces = traceRepository.findAllByEmployerNameOrderByTimestampDesc(employerName);
 
-            // Grouper les traces par semaine
-            Map<LocalDate, List<Trace>> tracesByWeek = traces.stream()
-                    .collect(Collectors.groupingBy(trace -> trace.getTimestamp().toLocalDate().with(java.time.DayOfWeek.MONDAY)));
+        // Grouper les traces par semaine
+        Map<LocalDate, List<Trace>> tracesByWeek = traces.stream()
+                .collect(Collectors.groupingBy(trace -> trace.getTimestamp().toLocalDate().with(java.time.DayOfWeek.MONDAY)));
 
-            Map<LocalDate, WorkSummary> weeklyWorkSummary = new HashMap<>();
+        // Utiliser un TreeMap pour que les semaines soient ordonnées (plus de complexité mais c'est obligatoire pour les chart
+        Map<LocalDate, WorkSummary> weeklyWorkSummary = new TreeMap<>();
 
-            for (Map.Entry<LocalDate, List<Trace>> weekEntry : tracesByWeek.entrySet())
-            {
-                LocalDate startOfWeek = weekEntry.getKey();
-                LocalDate endOfWeek = startOfWeek.plusDays(6);
+        for (Map.Entry<LocalDate, List<Trace>> weekEntry : tracesByWeek.entrySet()) {
+            LocalDate startOfWeek = weekEntry.getKey();
+            LocalDate endOfWeek = startOfWeek.plusDays(6);
 
-                calculerWorkSummarybyemployerAndIntervalDate(employerName, weeklyWorkSummary, startOfWeek, endOfWeek);
-            }
-
-            return weeklyWorkSummary;
+            calculerWorkSummarybyemployerAndIntervalDate(employerName, weeklyWorkSummary, startOfWeek, endOfWeek);
         }
+
+        return weeklyWorkSummary;
+    }
+
 
     public Map<LocalDate, WorkSummary> calculateMonthlyWorkSummaryByEmployee(String employerName) {
         // Récupérer toutes les traces de la base de données
@@ -364,7 +365,7 @@ public class TraceService {
     public Map<String, Map<LocalDate, WorkSummary>> calculateMonthlyWorkSummaryForAllEmployees() {
         // Récupérer toutes les employer name de la base de données
         List<String> employerName = traceRepository.findDistinctEmployerName();
-        Map<String, Map<LocalDate, WorkSummary>> monthlyWorkSummaryByEmployee = new HashMap<>();
+        Map<String, Map<LocalDate, WorkSummary>> monthlyWorkSummaryByEmployee = new TreeMap<>();
         for (String employer : employerName) {
             Map<LocalDate, WorkSummary> monthlyWorkSummary = calculateMonthlyWorkSummaryByEmployee(employer);
             monthlyWorkSummaryByEmployee.put(employer, monthlyWorkSummary);
