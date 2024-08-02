@@ -23,6 +23,9 @@ public interface TraceRepository extends JpaRepository<Trace, LocalDateTime> {
 
     List<Trace> findAllByOrderByTimestamp();
     List<Trace> findAllByEmployerNameOrderByTimestampDesc(String employerName);
-    @Query("SELECT DISTINCT t.employerName FROM Trace t")
+    List<Trace> findAllByMachineNameAndEmployerNameOrderByTimestamp(String machineName, String employerName);
+    @Query("SELECT DISTINCT t.employerName FROM Trace t order by t.employerName asc")
     List<String> findDistinctEmployerName();
+    @Query("SELECT DISTINCT t.machineName FROM Trace t where t.employerName = ?1")
+    List<String> findDistinctMachineNameByEmployerName(String employerName);
 }

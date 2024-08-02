@@ -398,4 +398,57 @@ public class TraceService {
         return monthlyWorkSummaryByEmployee;
     }
 
+
+    public Map<LocalDate, WorkSummary> calculateDailyWorkSummaryByEmployeeAndMachine(String employerName,String machineName) {
+        // Récupérer toutes les traces de l'employé
+        List<Trace> traces = traceRepository.findAllByMachineNameAndEmployerNameOrderByTimestamp(machineName,employerName);
+            // Grouper les traces par jour
+            Map<LocalDate, List<Trace>> tracesByDate = traces.stream()
+                    .collect(Collectors.groupingBy(trace -> trace.getTimestamp().toLocalDate()));
+            Map<LocalDate, WorkSummary> dailyWorkSummary = new HashMap<>();
+            for (Map.Entry<LocalDate, List<Trace>> dateEntry : tracesByDate.entrySet()) {
+                LocalDate date = dateEntry.getKey();
+                // Calculer le résumé de travail pour chaque jour puisque la liste trace findByMachineName alors le map dailyWorkSummary contient une seule valeur c'est la machineName
+                WorkSummary workSummary = calculateDailyWorkSummaryByMachine(employerName, date).get(machineName);
+                dailyWorkSummary.put(date, workSummary);
+            }
+return dailyWorkSummary;
+
+    }
+    public Map<LocalDate, WorkSummary> calculateWeeklyWorkSummaryByEmployeeAndMachine(String employerName, String machineName) {
+        // Récupérer toutes les traces de l'employé
+        List<Trace> traces = traceRepository.findAllByMachineNameAndEmployerNameOrderByTimestamp(machineName, employerName);
+        // Grouper les traces par semaine
+        Map<LocalDate, List<Trace>> tracesByWeek = traces.stream()
+                .collect(Collectors.groupingBy(trace -> trace.getTimestamp().toLocalDate().with(java.time.DayOfWeek.MONDAY)));
+        // Utiliser un TreeMap pour que les semaines soient ordonnées (plus de complexité mais c'est obligatoire pour les chart
+        Map<LocalDate, WorkSummary> weeklyWorkSummary = new TreeMap<>();
+        for (Map.Entry<LocalDate, List<Trace>> weekEntry : tracesByWeek.entrySet()) {
+            LocalDate startOfWeek = weekEntry.getKey();
+            LocalDate endOfWeek = startOfWeek.plusDays(6);
+            calculerWorkSummarybyemployerAndIntervalDate(employerName, weeklyWorkSummary, startOfWeek, endOfWeek);
+        }
+        return weeklyWorkSummary;
+    }
+
+    public Map<LocalDate, WorkSummary> calculateMonthlyWorkSummaryByEmployeeAndMachine(String employerName, String machineName) {
+        // Récupérer toutes les traces de l'employé
+        List<Trace> traces = traceRepository.findAllByMachineNameAndEmployerNameOrderByTimestamp(machineName, employerName);
+        // Grouper les traces par mois
+        Map<LocalDate, List<Trace>> tracesByMonth = traces.stream()
+                .collect(Collectors.groupingBy(trace -> trace.getTimestamp().toLocalDate().withDayOfMonth(1)));
+        Map<LocalDate, WorkSummary> monthlyWorkSummary = new HashMap<>();
+        for (Map.Entry<LocalDate, List<Trace>> monthEntry : tracesByMonth.entrySet()) {
+            LocalDate startOfMonth = monthEntry.getKey();
+            LocalDate endOfMonth = startOfMonth.plusMonths(1).minusDays(1);
+            calculerWorkSummarybyemployerAndIntervalDate(employerName, monthlyWorkSummary, startOfMonth, endOfMonth);
+        }
+        return monthlyWorkSummary;
+    }
+    public List<String> findDistinctMachineNameByEmployerName(String employerName) {
+        return traceRepository.findDistinctMachineNameByEmployerName(employerName);
+    }
+
+
+
 }

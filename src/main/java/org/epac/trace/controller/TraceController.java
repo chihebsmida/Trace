@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -104,4 +105,38 @@ public class TraceController {
             @RequestParam String employerName) {
         return traceService.calculateMonthlyWorkSummaryByEmployee(employerName);
     }
+
+    @GetMapping("/daily-work-summary-by-employee-and-machine")
+    @Operation(summary = "Obtenir le résumé quotidien du travail d'un employé par machine",
+            description = "Retourne une map des résumés de travail par machine pour un employé donné, groupés par jour.")
+    public Map<LocalDate, WorkSummary> calculateDailyWorkSummaryByEmployeeAndMachine(
+            @RequestParam @Parameter(description = "Nom de l'employé", example = "oumaima") String employerName,
+            @RequestParam @Parameter(description = "Nom de la machine", example = "press1") String machineName) {
+        return traceService.calculateDailyWorkSummaryByEmployeeAndMachine(employerName,machineName);
+    }
+    @GetMapping("/weekly-work-summary-by-employee-and-machine")
+    @Operation(summary = "Obtenir le résumé hebdomadaire du travail d'un employé par machine",
+            description = "Retourne une map des résumés de travail par machine pour un employé donné, groupés par semaine.")
+    public Map<LocalDate, WorkSummary> calculateWeeklyWorkSummaryByEmployeeAndMachine(
+            @RequestParam @Parameter(description = "Nom de l'employé", example = "oumaima") String employerName,
+            @RequestParam @Parameter(description = "Nom de la machine", example = "press1") String machineName) {
+        return traceService.calculateWeeklyWorkSummaryByEmployeeAndMachine(employerName,machineName);
+    }
+    @GetMapping("/monthly-work-summary-by-employee-and-machine")
+    @Operation(summary = "Obtenir le résumé mensuel du travail d'un employé par machine",
+            description = "Retourne une map des résumés de travail par machine pour un employé donné, groupés par mois.")
+    public Map<LocalDate, WorkSummary> calculateMonthlyWorkSummaryByEmployeeAndMachine(
+            @RequestParam @Parameter(description = "Nom de l'employé", example = "oumaima") String employerName,
+            @RequestParam @Parameter(description = "Nom de la machine", example = "press1") String machineName) {
+        return traceService.calculateMonthlyWorkSummaryByEmployeeAndMachine(employerName,machineName);
+    }
+    @GetMapping("/findDistinctMachineName")
+    @Operation(summary = "Obtenir la liste des noms de machines",
+            description = "Retourne une liste de noms de machines distincts")
+    public List<String> getAllMachineNames(
+            @Parameter(description = "Nom de l'employé", example = "oumaima") @RequestParam(required = true) String employerName
+    ) {
+        return traceService.findDistinctMachineNameByEmployerName(employerName);
+    }
+
 }
