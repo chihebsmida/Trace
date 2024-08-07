@@ -52,14 +52,6 @@ public class TraceController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return traceService.getWorkSummaryByEmployeeAndMachine( date);
     }
-    @GetMapping("/work-summaryByMachine/{employerName}")
-    @Operation(summary = "Obtenir le résumé de travail par machine pour un employeur et une date donnés")
-    public Map<String, WorkSummary> getWorkSummaryByMachine(
-            @Parameter(description = "Nom de l'employeur", required = true) @PathVariable String employerName,
-            @Parameter(description = "Date pour laquelle le résumé est requis format date yyyy-MM-DD ", required = true)
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return traceService.calculateDailyWorkSummaryByMachine(employerName, date);
-    }
     @GetMapping("/work-summary-by-machine")
     @Operation(summary = "Obtenir le résumé du travail par machine et employé pour une date donnée",
             description = "Retourne une map des résumés de travail de chaque machine, groupés par employé pour une journée donnée.")
@@ -70,7 +62,7 @@ public class TraceController {
 
         return traceService.getWorkSummaryByMachineAndEmployee(date);
     }
-    @GetMapping("/weekly-work-summary")
+    @GetMapping("/weekly-work-summary-all-employee")
     @Operation(summary = "Obtenir le résumé du travail hebdomadaire pour tous les employés par semaine",
             description = "Retourne une map des résumés de travail de chaque employé, groupés par semaine.")
     Map<String, Map<LocalDate, WorkSummary>> calculateWeeklyWorkSummaryForAllEmployees() {
@@ -84,13 +76,50 @@ public class TraceController {
             @RequestParam String employerName) {
         return traceService.calculateWeeklyWorkSummaryByEmployee(employerName);
     }
-    @GetMapping("/daily-work-summary")
+    @GetMapping("/weekly-work-summary-all-machine")
+    @Operation(summary = "Obtenir le résumé du travail hebdomadaire par machine pour tous les employés",
+            description = "Retourne une map des résumés de travail de chaque machine, groupés par semaine.")
+    Map<String, Map<LocalDate, WorkSummary>> calculateWeeklyWorkSummaryForAllMachines() {
+        return traceService.calculateWeeklyWorkSummaryForAllMachines();
+    }
+    @GetMapping("/weekly-work-summary-by-machine")
+    @Operation(summary = "Obtenir le résumé du travail hebdomadaire par machine",
+            description = "Retourne une map des résumés de travail de chaque machine, groupés par semaine.")
+   Map<LocalDate, WorkSummary> calculateWeeklyWorkSummaryByMachine(
+            @Parameter(description = "nom de machine", required = true,example = "press1")
+            @RequestParam String machineName) {
+        return traceService.calculateWeeklyWorkSummaryByMachine(machineName);
+    }
+    @GetMapping("/daily-work-summary-by-machine")
+    @Operation(summary = "Obtenir le résumé du travail journalier par machine",
+            description = "Retourne une map des résumés de travail  groupés par jour pour une machine.")
+    Map<LocalDate, WorkSummary> calculateDailyWorkSummaryByMachine(
+            @Parameter(description = "nom de machine", required = true,example = "press1")
+            @RequestParam String machineName) {
+        return traceService.calculateDailyWorkSummaryByMachine(machineName);
+    }
+    @GetMapping("/monthly-work-summary-by-machine")
+    @Operation(summary = "Obtenir le résumé du travail mensuel par machine",
+            description = "Retourne une map des résumés de travail de chaque machine, groupés par mois.")
+    Map<LocalDate, WorkSummary> calculateMonthlyWorkSummaryByMachine(
+            @Parameter(description = "nom de machine", required = true,example = "press1")
+            @RequestParam String machineName) {
+        return traceService.calculateMonthlyWorkSummaryByMachine(machineName);
+    }
+    @GetMapping("/daily-work-summary-all-employee")
     @Operation(summary = "Obtenir le résumé du travail journalier pour tous les employés",
             description = "Retourne une map des résumés de travail de chaque employé, groupés par jour.")
     Map<String, Map<LocalDate, WorkSummary>> calculateDailyWorkSummaryForAllEmployees() {
         return traceService.calculateDailyWorkSummaryForAllEmployees();
     }
-    @GetMapping("/monthly-work-summary")
+@GetMapping("/daily-work-summary-all-machine")
+    @Operation(summary = "Obtenir le résumé du travail journalier par tous les machines",
+            description = "Retourne une map des résumés de travail de chaque machine, groupés par jour.")
+Map<String, Map<LocalDate, WorkSummary>> calculateDailyWorkSummaryForAllMachines() {
+        return traceService.calculateDailyWorkSummaryForAllMachines();
+    }
+
+    @GetMapping("/monthly-work-summary-all-employee")
     @Operation(summary = "Obtenir le résumé du travail mensuel pour tous les employés",
             description = "Retourne une map des résumés de travail de chaque employé, groupés par mois.")
     Map<String, Map<LocalDate, WorkSummary>> calculateMonthlyWorkSummaryForAllEmployees() {
@@ -132,11 +161,23 @@ public class TraceController {
     }
     @GetMapping("/findDistinctMachineName")
     @Operation(summary = "Obtenir la liste des noms de machines",
-            description = "Retourne une liste de noms de machines distincts")
-    public List<String> getAllMachineNames(
+            description = "Retourne une liste de noms de machines distincts pour un employeur")
+    public List<String> getAllMachineNamesByEmployeur(
             @Parameter(description = "Nom de l'employé", example = "oumaima") @RequestParam(required = true) String employerName
     ) {
         return traceService.findDistinctMachineNameByEmployerName(employerName);
+    }
+    @GetMapping("/findDistinctAllMachineName")
+    @Operation(summary = "Obtenir la liste des noms de machines",
+            description = "Retourne une liste de noms de machines distincts")
+    public List<String> getAllMachineNames() {
+        return traceService.findDistinctMachineName();
+    }
+    @GetMapping("/findDistinctEmployerName")
+    @Operation(summary = "Obtenir la liste des noms d'employeurs",
+            description = "Retourne une liste de noms d'employeurs distincts")
+    public List<String> getAllEmployerNames() {
+        return traceService.findDistinctEmployerName();
     }
 
 }
