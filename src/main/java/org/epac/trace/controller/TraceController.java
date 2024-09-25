@@ -2,6 +2,7 @@ package org.epac.trace.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.AllArgsConstructor;
 import org.epac.trace.dto.WorkSummary;
 import org.epac.trace.entity.Trace;
@@ -9,6 +10,7 @@ import org.epac.trace.exception.InvalidTraceOperationException;
 import org.epac.trace.services.TraceService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -20,10 +22,10 @@ import java.util.Map;
 @CrossOrigin(origins = "http://localhost:4200")
 public class TraceController {
     private final TraceService traceService;
-
-
+    @PreAuthorize("hasRole('AdminTrace')")
     @PostMapping("/add")
     @Operation(summary = "Add a new trace", description = "Add a new trace to the database no need to provide timestamp it will be generated automatically")
+    @SecurityRequirement(name = "bearerAuth") // Indique que cette méthode nécessite un token
     @ApiResponse(responseCode = "200", description = "Trace added successfully")
     public ResponseEntity<?> addTrace(
             @Parameter(description = "Trace object to be stored in database", required = true) @RequestBody Trace trace) {
@@ -34,7 +36,9 @@ public class TraceController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @PreAuthorize("hasAnyRole('AdminTrace', 'simpleUser')")
     @GetMapping("/work-summary/{employerName}")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé de travail pour un employeur pour une date donnés")
     public WorkSummary getWorkSummary(
             @Parameter(description = "Nom de l'employeur", required = true) @PathVariable String employerName,
@@ -44,6 +48,7 @@ public class TraceController {
     }
 
     @GetMapping("/work-summary-by-employe")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé de travail par employer et machine pour une date donnés",
             description = "Retourne une map des résumés de travail de chaque employé, groupés par machine pour une journée donnée.")
     @ApiResponse(responseCode = "200", description = "Résumé du travail récupéré avec succès")
@@ -53,6 +58,7 @@ public class TraceController {
         return traceService.getWorkSummaryByEmployeeAndMachine( date);
     }
     @GetMapping("/work-summary-by-machine")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé du travail par machine et employé pour une date donnée",
             description = "Retourne une map des résumés de travail de chaque machine, groupés par employé pour une journée donnée.")
     @ApiResponse(responseCode = "200", description = "Résumé du travail récupéré avec succès")
@@ -63,12 +69,14 @@ public class TraceController {
         return traceService.getWorkSummaryByMachineAndEmployee(date);
     }
     @GetMapping("/weekly-work-summary-all-employee")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé du travail hebdomadaire pour tous les employés par semaine",
             description = "Retourne une map des résumés de travail de chaque employé, groupés par semaine.")
     Map<String, Map<LocalDate, WorkSummary>> calculateWeeklyWorkSummaryForAllEmployees() {
         return traceService.calculateWeeklyWorkSummaryForAllEmployees();
     }
     @GetMapping("/weekly-work-summary-by-employer")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé du travail hebdomadaire par semaine pour un employé",
             description = "Retourne une map des résumés de travail de chaque employé, groupés par semaine.")
     Map<LocalDate, WorkSummary> calculateWeeklyWorkSummaryForAllEmployees(
@@ -77,12 +85,14 @@ public class TraceController {
         return traceService.calculateWeeklyWorkSummaryByEmployee(employerName);
     }
     @GetMapping("/weekly-work-summary-all-machine")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé du travail hebdomadaire par machine pour tous les employés",
             description = "Retourne une map des résumés de travail de chaque machine, groupés par semaine.")
     Map<String, Map<LocalDate, WorkSummary>> calculateWeeklyWorkSummaryForAllMachines() {
         return traceService.calculateWeeklyWorkSummaryForAllMachines();
     }
     @GetMapping("/weekly-work-summary-by-machine")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé du travail hebdomadaire par machine",
             description = "Retourne une map des résumés de travail de chaque machine, groupés par semaine.")
    Map<LocalDate, WorkSummary> calculateWeeklyWorkSummaryByMachine(
@@ -91,6 +101,7 @@ public class TraceController {
         return traceService.calculateWeeklyWorkSummaryByMachine(machineName);
     }
     @GetMapping("/daily-work-summary-by-machine")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé du travail journalier par machine",
             description = "Retourne une map des résumés de travail  groupés par jour pour une machine.")
     Map<LocalDate, WorkSummary> calculateDailyWorkSummaryByMachine(
@@ -99,6 +110,7 @@ public class TraceController {
         return traceService.calculateDailyWorkSummaryByMachine(machineName);
     }
     @GetMapping("/monthly-work-summary-by-machine")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé du travail mensuel par machine",
             description = "Retourne une map des résumés de travail de chaque machine, groupés par mois.")
     Map<LocalDate, WorkSummary> calculateMonthlyWorkSummaryByMachine(
@@ -107,12 +119,15 @@ public class TraceController {
         return traceService.calculateMonthlyWorkSummaryByMachine(machineName);
     }
     @GetMapping("/daily-work-summary-all-employee")
+    @PreAuthorize("hasRole('AdminTrace')")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé du travail journalier pour tous les employés",
             description = "Retourne une map des résumés de travail de chaque employé, groupés par jour.")
     Map<String, Map<LocalDate, WorkSummary>> calculateDailyWorkSummaryForAllEmployees() {
         return traceService.calculateDailyWorkSummaryForAllEmployees();
     }
 @GetMapping("/daily-work-summary-all-machine")
+@SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé du travail journalier par tous les machines",
             description = "Retourne une map des résumés de travail de chaque machine, groupés par jour.")
 Map<String, Map<LocalDate, WorkSummary>> calculateDailyWorkSummaryForAllMachines() {
@@ -120,6 +135,7 @@ Map<String, Map<LocalDate, WorkSummary>> calculateDailyWorkSummaryForAllMachines
     }
 
     @GetMapping("/monthly-work-summary-all-employee")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé du travail mensuel pour tous les employés",
             description = "Retourne une map des résumés de travail de chaque employé, groupés par mois.")
     Map<String, Map<LocalDate, WorkSummary>> calculateMonthlyWorkSummaryForAllEmployees() {
@@ -127,6 +143,7 @@ Map<String, Map<LocalDate, WorkSummary>> calculateDailyWorkSummaryForAllMachines
     }
 
     @GetMapping("/monthly-work-summary-by-employer")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé du travail mensuel  pour un employé",
             description = "Retourne une map des résumés de travail de chaque employé, groupés par mois.")
     Map<LocalDate, WorkSummary> calculateMonthlyWorkSummaryByEmployee(
@@ -136,6 +153,7 @@ Map<String, Map<LocalDate, WorkSummary>> calculateDailyWorkSummaryForAllMachines
     }
 
     @GetMapping("/daily-work-summary-by-employee-and-machine")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé quotidien du travail d'un employé par machine",
             description = "Retourne une map des résumés de travail par machine pour un employé donné, groupés par jour.")
     public Map<LocalDate, WorkSummary> calculateDailyWorkSummaryByEmployeeAndMachine(
@@ -144,6 +162,7 @@ Map<String, Map<LocalDate, WorkSummary>> calculateDailyWorkSummaryForAllMachines
         return traceService.calculateDailyWorkSummaryByEmployeeAndMachine(employerName,machineName);
     }
     @GetMapping("/weekly-work-summary-by-employee-and-machine")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé hebdomadaire du travail d'un employé par machine",
             description = "Retourne une map des résumés de travail par machine pour un employé donné, groupés par semaine.")
     public Map<LocalDate, WorkSummary> calculateWeeklyWorkSummaryByEmployeeAndMachine(
@@ -152,6 +171,7 @@ Map<String, Map<LocalDate, WorkSummary>> calculateDailyWorkSummaryForAllMachines
         return traceService.calculateWeeklyWorkSummaryByEmployeeAndMachine(employerName,machineName);
     }
     @GetMapping("/monthly-work-summary-by-employee-and-machine")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir le résumé mensuel du travail d'un employé par machine",
             description = "Retourne une map des résumés de travail par machine pour un employé donné, groupés par mois.")
     public Map<LocalDate, WorkSummary> calculateMonthlyWorkSummaryByEmployeeAndMachine(
@@ -160,6 +180,7 @@ Map<String, Map<LocalDate, WorkSummary>> calculateDailyWorkSummaryForAllMachines
         return traceService.calculateMonthlyWorkSummaryByEmployeeAndMachine(employerName,machineName);
     }
     @GetMapping("/findDistinctMachineName")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir la liste des noms de machines",
             description = "Retourne une liste de noms de machines distincts pour un employeur")
     public List<String> getAllMachineNamesByEmployeur(
@@ -168,12 +189,14 @@ Map<String, Map<LocalDate, WorkSummary>> calculateDailyWorkSummaryForAllMachines
         return traceService.findDistinctMachineNameByEmployerName(employerName);
     }
     @GetMapping("/findDistinctAllMachineName")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir la liste des noms de machines",
             description = "Retourne une liste de noms de machines distincts")
     public List<String> getAllMachineNames() {
         return traceService.findDistinctMachineName();
     }
     @GetMapping("/findDistinctEmployerName")
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Obtenir la liste des noms d'employeurs",
             description = "Retourne une liste de noms d'employeurs distincts")
     public List<String> getAllEmployerNames() {
