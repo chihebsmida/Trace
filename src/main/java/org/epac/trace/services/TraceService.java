@@ -26,7 +26,7 @@ public class TraceService {
         // Récupérer la dernière opération de l'employé
         Optional<Trace> lastTraceOpt = traceRepository.findTopByEmployerNameOrderByTimestampDesc(trace.getEmployerName());
         Optional<Trace> lastTraceOptMachine = traceRepository.findTopByMachineNameOrderByTimestampDesc(trace.getMachineName());
- // tester si la machine est en marche ou pause par autre employé
+        // tester si la machine est en marche ou pause par autre employé
         if (lastTraceOptMachine.isPresent()) {
             Trace lastTraceMachine = lastTraceOptMachine.get();
             if ((lastTraceMachine.getOperation() == Operation.START || lastTraceMachine.getOperation() == Operation.PAUSE)&&!lastTraceMachine.getEmployerName().equals(trace.getEmployerName())){

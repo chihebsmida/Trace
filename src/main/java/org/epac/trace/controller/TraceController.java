@@ -9,6 +9,7 @@ import org.epac.trace.exception.InvalidTraceOperationException;
 import org.epac.trace.services.TraceService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -25,6 +26,7 @@ public class TraceController {
     @PostMapping("/add")
     @Operation(summary = "Add a new trace", description = "Add a new trace to the database no need to provide timestamp it will be generated automatically")
     @ApiResponse(responseCode = "200", description = "Trace added successfully")
+    @PreAuthorize("hasRole('admin_role')")
     public ResponseEntity<?> addTrace(
             @Parameter(description = "Trace object to be stored in database", required = true) @RequestBody Trace trace) {
         try {
@@ -35,108 +37,123 @@ public class TraceController {
         }
     }
     @GetMapping("/work-summary/{employerName}")
-    @Operation(summary = "Obtenir le résumé de travail pour un employeur pour une date donnés")
+    @Operation(summary = "Obtain the work summary for an employer for a given date.")
+    @PreAuthorize("hasRole('admin_role')")
     public WorkSummary getWorkSummary(
-            @Parameter(description = "Nom de l'employeur", required = true) @PathVariable String employerName,
-            @Parameter(description = "Date pour laquelle le résumé est requis format date yyyy-MM-DD", required = true)
+            @Parameter(description = "Employee name", required = true) @PathVariable String employerName,
+            @Parameter(description = "Date for which the summary is required in the format yyyy-MM-DD.", required = true)
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return traceService.calculateDailyWorkSummary(employerName, date);
     }
 
     @GetMapping("/work-summary-by-employe")
-    @Operation(summary = "Obtenir le résumé de travail par employer et machine pour une date donnés",
-            description = "Retourne une map des résumés de travail de chaque employé, groupés par machine pour une journée donnée.")
+    @Operation(summary = "Obtain the work summary by employer and machine for a given date.",
+            description = "Return a map of work summaries for each employee, grouped by machine for a given day.")
     @ApiResponse(responseCode = "200", description = "Résumé du travail récupéré avec succès")
+    @PreAuthorize("hasRole('admin_role')")
     public Map<String, Map<String, WorkSummary>> getWorkSummaryByEmployeeAndMachine(
-            @Parameter(description = "Date pour laquelle le résumé est requis format date yyyy-MM-DD ", required = true)
+            @Parameter(description = "Date for which the summary is required in the format yyyy-MM-DD", required = true)
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return traceService.getWorkSummaryByEmployeeAndMachine( date);
     }
     @GetMapping("/work-summaryByMachine/{employerName}")
-    @Operation(summary = "Obtenir le résumé de travail par machine pour un employeur et une date donnés")
+    @Operation(summary = "Get the work summary by machine for a given employer and date.")
+    @PreAuthorize("hasRole('admin_role')")
     public Map<String, WorkSummary> getWorkSummaryByMachine(
-            @Parameter(description = "Nom de l'employeur", required = true) @PathVariable String employerName,
-            @Parameter(description = "Date pour laquelle le résumé est requis format date yyyy-MM-DD ", required = true)
+            @Parameter(description = "Employee name", required = true) @PathVariable String employerName,
+            @Parameter(description = "Date for which the summary is required in the format yyyy-MM-DD.", required = true)
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return traceService.calculateDailyWorkSummaryByMachine(employerName, date);
     }
     @GetMapping("/work-summary-by-machine")
-    @Operation(summary = "Obtenir le résumé du travail par machine et employé pour une date donnée",
-            description = "Retourne une map des résumés de travail de chaque machine, groupés par employé pour une journée donnée.")
-    @ApiResponse(responseCode = "200", description = "Résumé du travail récupéré avec succès")
+    @Operation(summary = "Obtain the work summary by machine and employer for a given date.",
+            description = "Return a map of work summaries for each machine, grouped by employee for a given day.")
+    @ApiResponse(responseCode = "200", description = "Work summary retrieved successfully.")
+    @PreAuthorize("hasRole('admin_role')")
     public Map<String, Map<String,WorkSummary>> getWorkSummaryByMachineAndEmployee(
-            @Parameter(description = "Date pour laquelle le résumé est requis format date yyyy-MM-DD ", required = true)
+            @Parameter(description = "Date for which the summary is required in the format yyyy-MM-DD. ", required = true)
             @RequestParam LocalDate date) {
 
         return traceService.getWorkSummaryByMachineAndEmployee(date);
     }
     @GetMapping("/weekly-work-summary")
-    @Operation(summary = "Obtenir le résumé du travail hebdomadaire pour tous les employés par semaine",
-            description = "Retourne une map des résumés de travail de chaque employé, groupés par semaine.")
+    @Operation(summary = "Get the weekly work summary for all employees by week.",
+            description = "Return a map of work summaries for each employee, grouped by week.")
+    @PreAuthorize("hasRole('admin_role')")
     Map<String, Map<LocalDate, WorkSummary>> calculateWeeklyWorkSummaryForAllEmployees() {
         return traceService.calculateWeeklyWorkSummaryForAllEmployees();
     }
     @GetMapping("/weekly-work-summary-by-employer")
-    @Operation(summary = "Obtenir le résumé du travail hebdomadaire par semaine pour un employé",
-            description = "Retourne une map des résumés de travail de chaque employé, groupés par semaine.")
+    @Operation(summary = "Get the weekly work summary by week for an employee.",
+            description = "Return a map of work summaries for each employee, grouped by week.")
+    @PreAuthorize("hasRole('admin_role')")
     Map<LocalDate, WorkSummary> calculateWeeklyWorkSummaryForAllEmployees(
-            @Parameter(description = "nom d'employer", required = true)
+            @Parameter(description = "Employer name", required = true)
             @RequestParam String employerName) {
         return traceService.calculateWeeklyWorkSummaryByEmployee(employerName);
     }
     @GetMapping("/daily-work-summary")
-    @Operation(summary = "Obtenir le résumé du travail journalier pour tous les employés",
-            description = "Retourne une map des résumés de travail de chaque employé, groupés par jour.")
+    @Operation(summary = "Get the daily work summary for all employees.",
+            description = "Return a map of work summaries for each employee, grouped by day.")
+    @PreAuthorize("hasRole('admin_role')")
     Map<String, Map<LocalDate, WorkSummary>> calculateDailyWorkSummaryForAllEmployees() {
         return traceService.calculateDailyWorkSummaryForAllEmployees();
     }
     @GetMapping("/monthly-work-summary")
-    @Operation(summary = "Obtenir le résumé du travail mensuel pour tous les employés",
-            description = "Retourne une map des résumés de travail de chaque employé, groupés par mois.")
+    @Operation(summary = "Get the monthly work summary for all employees.",
+            description = "Return a map of work summaries for each employee, grouped by month.")
     Map<String, Map<LocalDate, WorkSummary>> calculateMonthlyWorkSummaryForAllEmployees() {
         return traceService.calculateMonthlyWorkSummaryForAllEmployees();
     }
 
     @GetMapping("/monthly-work-summary-by-employer")
-    @Operation(summary = "Obtenir le résumé du travail mensuel  pour un employé",
-            description = "Retourne une map des résumés de travail de chaque employé, groupés par mois.")
+    @Operation(summary = "Get the monthly work summary for an employee.",
+            description = "Return a map of work summaries for each employee, grouped by month.")
+    @PreAuthorize("hasRole('admin_role')")
     Map<LocalDate, WorkSummary> calculateMonthlyWorkSummaryByEmployee(
-            @Parameter(description = "nom d'employer", required = true)
+            @Parameter(description = "Employee", required = true)
             @RequestParam String employerName) {
         return traceService.calculateMonthlyWorkSummaryByEmployee(employerName);
     }
 
     @GetMapping("/daily-work-summary-by-employee-and-machine")
-    @Operation(summary = "Obtenir le résumé quotidien du travail d'un employé par machine",
-            description = "Retourne une map des résumés de travail par machine pour un employé donné, groupés par jour.")
+    @Operation(summary = "Get the daily work summary of an employee by machine.",
+            description = "Return a map of work summaries by machine for a given employee, grouped by day.")
+    @PreAuthorize("hasRole('user-role')")
     public Map<LocalDate, WorkSummary> calculateDailyWorkSummaryByEmployeeAndMachine(
-            @RequestParam @Parameter(description = "Nom de l'employé", example = "oumaima") String employerName,
-            @RequestParam @Parameter(description = "Nom de la machine", example = "press1") String machineName) {
+            @RequestParam @Parameter(description = "Employee name", example = "oumaima") String employerName,
+            @RequestParam @Parameter(description = "Machine name", example = "press1") String machineName) {
         return traceService.calculateDailyWorkSummaryByEmployeeAndMachine(employerName,machineName);
     }
     @GetMapping("/weekly-work-summary-by-employee-and-machine")
-    @Operation(summary = "Obtenir le résumé hebdomadaire du travail d'un employé par machine",
-            description = "Retourne une map des résumés de travail par machine pour un employé donné, groupés par semaine.")
+    @Operation(summary = "Get the weekly work summary of an employee by machine.",
+            description = "Return a map of work summaries by machine for a given employee, grouped by week.")
+    @PreAuthorize("hasRole('user-role')")
     public Map<LocalDate, WorkSummary> calculateWeeklyWorkSummaryByEmployeeAndMachine(
-            @RequestParam @Parameter(description = "Nom de l'employé", example = "oumaima") String employerName,
-            @RequestParam @Parameter(description = "Nom de la machine", example = "press1") String machineName) {
+            @RequestParam @Parameter(description = "Employee name", example = "oumaima") String employerName,
+            @RequestParam @Parameter(description = "Machine name", example = "press1") String machineName) {
         return traceService.calculateWeeklyWorkSummaryByEmployeeAndMachine(employerName,machineName);
     }
     @GetMapping("/monthly-work-summary-by-employee-and-machine")
-    @Operation(summary = "Obtenir le résumé mensuel du travail d'un employé par machine",
-            description = "Retourne une map des résumés de travail par machine pour un employé donné, groupés par mois.")
+    @Operation(summary = "Get the monthly work summary of an employee by machine.",
+            description = "Return a map of work summaries by machine for a given employee, grouped by month.")
+    @PreAuthorize("hasRole('user-role')")
     public Map<LocalDate, WorkSummary> calculateMonthlyWorkSummaryByEmployeeAndMachine(
-            @RequestParam @Parameter(description = "Nom de l'employé", example = "oumaima") String employerName,
-            @RequestParam @Parameter(description = "Nom de la machine", example = "press1") String machineName) {
+            @RequestParam @Parameter(description = "Employee name", example = "oumaima") String employerName,
+            @RequestParam @Parameter(description = "Machine name", example = "press1") String machineName) {
         return traceService.calculateMonthlyWorkSummaryByEmployeeAndMachine(employerName,machineName);
     }
     @GetMapping("/findDistinctMachineName")
-    @Operation(summary = "Obtenir la liste des noms de machines",
-            description = "Retourne une liste de noms de machines distincts")
+    @Operation(summary = "Get the list of machine names.",
+            description = "Return a list of distinct machine names.")
+    @PreAuthorize("hasRole('user-role')")
     public List<String> getAllMachineNames(
-            @Parameter(description = "Nom de l'employé", example = "oumaima") @RequestParam(required = true) String employerName
+            @Parameter(description = "Employee name", example = "oumaima") @RequestParam(required = true) String employerName
     ) {
         return traceService.findDistinctMachineNameByEmployerName(employerName);
     }
-
+    @GetMapping("/healthCheck")
+    public String healthCheck() {
+        return "The application is running";
+    }
 }
